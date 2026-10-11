@@ -1,0 +1,11 @@
+{
+  "name": "Concurrent Programming From Zero",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "student",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.cpptools", "ms-vscode.makefile-tools"]
+    }
+  },
+  "postCreateCommand": "bash setup/check.sh"
+}
