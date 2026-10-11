@@ -1,0 +1,8 @@
+# Banker's algorithm with ONE resource type (our own numbers): 10 units in total.
+# Run:  make run M=10 EX=banker ARGS="safe modules/10-deadlocks/calc/examples/one_resource.txt"
+#       make run M=10 EX=banker ARGS="request modules/10-deadlocks/calc/examples/one_resource.txt A 1"
+resources: units
+existing: 10
+A: alloc 3 max 9
+B: alloc 2 max 4
+C: alloc 2 max 7

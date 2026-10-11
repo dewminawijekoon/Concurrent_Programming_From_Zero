@@ -1,0 +1,9 @@
+# Exam-style question (our own numbers): three threads acquire several
+# instances of R1 and R2. Each "acquire" waits until ALL the instances it
+# names are free, then takes them in one step.
+# Run:  make run M=10 EX=banker ARGS="schedule modules/10-deadlocks/calc/examples/threads.txt"
+#       make run M=10 EX=banker ARGS="schedule modules/10-deadlocks/calc/examples/threads.txt at T1=1 T2=1 T3=1"
+resources: R1=3 R2=2
+T1: acquire R1 2; acquire R2 1; release all
+T2: acquire R2 1; acquire R1 2; release all
+T3: acquire R2 1; acquire R1 2; release all

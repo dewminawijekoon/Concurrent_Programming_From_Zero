@@ -69,7 +69,7 @@ MPIEXEC="mpiexec --oversubscribe"
 if [ "$(id -u)" = "0" ]; then MPIEXEC="$MPIEXEC --allow-run-as-root"; fi
 
 magic() { # magic <file> <KEY>
-    sed -n '1,30p' "$1" | sed -n "s|^[[:space:]]*\(//\|#\)[[:space:]]*$2:[[:space:]]*||p" | head -1
+    sed -n '1,30p' "$1" | sed -n -E "s@^[[:space:]]*(//|#)[[:space:]]*$2:[[:space:]]*@@p" | head -1
 }
 
 missing_requirement() { # prints the first unmet requirement, if any
