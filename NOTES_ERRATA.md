@@ -15,6 +15,7 @@ exponents were lost, so "1010" means 10¹⁰ and "$ k" means "there exists a k"
 |---|---|---|---|
 | L01 vs L03 | L01 slide 34; L03 slide 43 | L01: "no deadlock" is a *liveness* property. L03: lists "absence of deadlock" under *safety*. | Most textbooks call deadlock-freedom **liveness** ("some thread eventually gets in"). In an exam, say which meaning you use. |
 | L01 | producer–consumer pseudocode (slide 59) | the loop that releases the pets and resets the can is labelled "Bob's code"; the loop that stocks the pond is labelled "Alice's code" | The story says the opposite (slide 58: "Alice resets can when pets are fed"): Alice owns the pets (consumer), Bob stocks the food (producer). Go by what the code does. |
+| L01 | static split (slide 18) | a comma instead of a semicolon in the `for`; `<` skips the last number of each range | read it as `for (j = start; j <= end; j++)`. |
 | L01 | prime example (slide 21) | the loop tests the previous value of j | each thread ends up testing one number past its limit; harmless, but it explains off-by-one counts (module 01). |
 | L02 | Amdahl examples (slides 4–9) | the formula itself is an image; only the answers survive | speedup = 1 / ((1 − p) + p/n). With 10 processors: 60% → 2.17, 80% → 3.57, 90% → 5.26, 99% → 9.17 (module 02). |
 | L02 | P-FIB example (slide 26) | "speedup will not be more than 2" | the exact bound is work/span = 17/8 = 2.125. |
@@ -31,6 +32,13 @@ exponents were lost, so "1010" means 10¹⁰ and "$ k" means "there exists a k"
 | L06 | Filter (slides 28–31) | `∃` shows as `$`; brackets in the waiting condition are unbalanced; the constructor loop starts at `i = 1` | the condition is "there is another thread k at my level or higher, and I am the victim at this level". In C, initialise **every** array element (module 06). |
 | L06 | Bakery (slide 40) | an arrow was lost: "If DA  DB" | it means "if A's doorway finishes before B's doorway starts". "Ties are impossible" is about (label, id) **pairs**; two labels can be equal. |
 | L06 | slide 40 notes | "How about the starvation?" has no answer | first-come-first-served implies starvation-freedom. |
+| L07 | slide 8 | the GPU's "1 FLOP per core" | it is a double-precision figure; single precision is about twice as fast. |
+| L07 | slide 11 | matrix sizes in the benchmark table | some listed sizes cannot be multiplied (inner dimensions don't match). |
+| L07 | slide 27 | CPU `mmult` uses `+=` and `minit` is empty | the result matrix must start as all zeros. |
+| L07 | slides 30–31 | the GPU kernel assumes N is a multiple of 32 | add a bounds check (`if (i < N)`) for other sizes (module 12). |
+| L07 | slide 33 | `cudaThreadSynchronize` | deprecated; use `cudaDeviceSynchronize`. |
+| L07 | slide 37 | `size_z` | means `size_t`. |
+| L07 | slide 38 | `blockID` | the built-in is `blockIdx`. |
 | L08 (semaphores) | blocked-set semaphore (slide 13) | starvation for N > 2 "left as an exercise" | module 07 §3.3 gives an example. |
 | L08 (semaphores) | Bill & Ben (slides 16–18) | semaphores `first`/`second` with no explanation | all three versions shown are correct; the deadlocking version (both threads `down` first) is not shown (module 07). |
 | L08 (semaphores) | infinite buffer invariant (slide 22) | garbled ("#E = 0+tail-head") | number of items = tail − head, which is never negative. |
@@ -47,6 +55,8 @@ exponents were lost, so "1010" means 10¹⁰ and "$ k" means "there exists a k"
 | L09 | barrier (slide 28) | pictures only, no code | modules 07 and 08 build reusable barriers. |
 | L10 | MPI slides | most function signatures are images | module 13 lists them (the exam appendix provides them too). |
 | L10 | partitioning (slide 43) | block / cyclic / block-cyclic pictures are lost | module 11 redraws them. |
+| L10 | slide 36 | "dest_process" in the `MPI_Reduce` call | it is the **root** process that receives the result. |
+| L10 | scatter / vector-sum slides | assume n is a multiple of the number of processes | otherwise the last items are lost; module 13 handles any n. |
 | L11 | Banker's algorithm and detection | the algorithm steps and matrices are images | module 10 writes them out; `calc/banker` runs `safe`, `request`, `detect` and `schedule`. |
 | L11 | slides 24–25 | the prevention summary is an image; the last slide is empty | module 10 summarises prevention per condition. |
 | L12 | slide 15 | "with CAS, a wait-free version of any data structure exists" | true (it's a theorem), but the general construction is far too slow for practice. |
