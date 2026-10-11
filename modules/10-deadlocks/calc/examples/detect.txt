@@ -1,0 +1,8 @@
+# Deadlock detection example (our own numbers): E, C and R are given; A = E - sum of C.
+# Run:  make run M=10 EX=banker ARGS="detect modules/10-deadlocks/calc/examples/detect.txt"
+resources: R1 R2 R3
+existing:  4 4 3
+P1: alloc 2 1 0   request 0 2 0
+P2: alloc 1 2 1   request 1 0 0
+P3: alloc 0 1 1   request 0 0 1
+P4: alloc 1 0 0   request 1 0 1

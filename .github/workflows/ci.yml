@@ -1,0 +1,22 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libomp-dev openmpi-bin libopenmpi-dev
+      - name: Toolchain report
+        run: bash setup/check.sh
+      - name: interleave regression tests
+        run: make interleave-selftest
+      - name: Reference answers pass (3 rounds, catches flaky tests)
+        run: make verify-answers-repeat REPEAT=3
+      - name: Untouched exercises compile and fail cleanly (no hangs, no crashes)
+        run: bash tools/check_exercises.sh

@@ -1,0 +1,18 @@
+# Course source material: copyrighted, never commit
+_sources/
+md_notes/
+Labs/
+*.pptx
+*.pdf
+
+# Build outputs
+*.o
+*.out
+bin/
+build/
+*.dSYM/
+.vscode/
+.build/
+.build-*/
+.progress.tmp
+__pycache__/
