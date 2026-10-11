@@ -17,6 +17,25 @@ explanation.
 4. **Every exercise needs a test and an answer**, and `make verify-answers`
    must pass.
 
+## Write for a first-year student
+
+Everything here (lessons, quizzes, answers, code comments, test and tool
+messages) must be easy to understand for an undergraduate who has just met
+the topic.
+
+- Short sentences and everyday words, one idea per sentence.
+- Define every technical term the first time you use it, with a tiny
+  example, and link it to [GLOSSARY.md](GLOSSARY.md). Add new terms there.
+- No unexplained jargon, abbreviations or symbols. Avoid "WLOG", "SCC",
+  "seq_cst" and similar, or explain them in plain words.
+- Show a concrete example (a schedule, a table, some output) before the
+  general rule.
+- Always say *why*, so students can repeat the reason in the exam.
+- Test and tool messages must make sense without reading the source code.
+
+Before committing, reread your text as a student would. Rewrite any
+sentence that needs a second read.
+
 ## Adding or changing an exercise
 
 Copy the layout in [`modules/_TEMPLATE`](modules/_TEMPLATE). Conventions:

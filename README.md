@@ -29,6 +29,7 @@ Every module in [`modules/`](modules) has the same parts:
 | `break_it/` | demos that show a bug actually happening |
 
 Reference solutions and quiz answers are in [`answers/`](answers). Try first.
+New words are explained in plain English in the [glossary](GLOSSARY.md).
 
 Two tools come with the repo:
 

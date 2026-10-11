@@ -1038,6 +1038,10 @@ def print_steps(g, m, steps, start_no=1):
         what = ins.src if ins.kind != "NONCRIT" else "noncritical"
         if ins.kind == "CRIT":
             what = "critical   (finishes, leaves the CS)"
+        if ins.kind == "JIF":
+            k = info["thread"]
+            res = m.eval(ins.expr, k, before[0], before[1][k][1])
+            what += "   (true)" if res else "   (false)"
         if info.get("halt"):
             what = "noncritical  (and stays there forever)"
         changes = [f"{n}={fmt_val(b)}" for n, a, b in zip(m.p.shared_names, before[0], after[0]) if a != b]
@@ -1064,16 +1068,17 @@ def report_protocol(prog, args):
     has_ncs = any(ins.kind == "NONCRIT" for th in prog.threads for ins in th["code"])
     ntrans = sum(len(e) for e in g.edges)
     names = ", ".join(t["name"] for t in prog.threads)
-    print(f"{prog.filename}: threads {names}; explored {len(g.states)} states, {ntrans} transitions")
+    print(f"{prog.filename}: threads {names}")
+    print(f"  checked every possible order of steps ({len(g.states)} different situations)")
     if not g.complete:
-        print(f"  WARNING: stopped at --max-states {args.max_states}; results below are partial")
+        print(f"  WARNING: too many situations; stopped after {args.max_states} (--max-states). Results below are incomplete.")
     if m.bound_hit:
-        print(f"  NOTE: states with values beyond --bound {args.bound} were cut off")
+        print(f"  NOTE: situations where a number grew bigger than {args.bound} (--bound) were not explored")
     if m.allow_halt and has_ncs:
-        print("  (a thread may stop forever in `noncritical`, as the lecture's rules allow;"
-              " use --no-halt to forbid)")
+        print("  (a thread may stop for good in `noncritical`, as the lecture's rules allow;"
+              " add --no-halt to switch this off)")
     if args.priority:
-        print(f"  scheduler: strict priority {args.priority} (single core)")
+        print(f"  one CPU core; only the highest-priority ready threads may run: {args.priority}")
     verdict = {}
 
     # 1. mutual exclusion / assertions
@@ -1089,15 +1094,15 @@ def report_protocol(prog, args):
     print()
     if has_cs:
         if me_bad is None:
-            print("[OK]    Mutual exclusion: never two threads in the critical section")
+            print("[OK]    Mutual exclusion: two threads are never in the critical section together")
             verdict["mutex"] = "ok"
         else:
             st = g.states[me_bad]
             inside = [m.p.threads[k]["name"] for k in range(nthreads) if m.at_critical(st, k)]
-            print(f"[FAIL]  Mutual exclusion VIOLATED: {' and '.join(inside)} are both in the critical section")
-            print("        Shortest schedule that gets there:")
+            print(f"[FAIL]  Mutual exclusion VIOLATED: {' and '.join(inside)} can be in the critical section at the same time")
+            print("        Shortest order of steps that gets there:")
             print_steps(g, m, g.path_to(me_bad))
-            print(f"        state: {describe_state(m, st)}")
+            print(f"        shared variables at that point: {describe_state(m, st)}")
             verdict["mutex"] = "violated"
     if assert_bad is not None:
         sid, info, w = assert_bad
@@ -1121,19 +1126,19 @@ def report_protocol(prog, args):
         else:
             dead = dead if dead is not None else sid
     if dead is None:
-        print("[OK]    No deadlock")
+        print("[OK]    No deadlock: the threads can never all be stuck waiting")
         verdict["deadlock"] = "none"
     else:
         st = g.states[dead]
-        print("[FAIL]  DEADLOCK: every unfinished thread is waiting and nobody can move")
+        print("[FAIL]  DEADLOCK: every thread that has not finished is waiting, and none can ever continue")
         print_steps(g, m, g.path_to(dead))
         for k in range(nthreads):
             print(f"        {m.p.threads[k]['name']} is {thread_pos(m, st, k)}")
-        print(f"        state: {describe_state(m, st)}")
+        print(f"        shared variables at that point: {describe_state(m, st)}")
         verdict["deadlock"] = "found"
     if has_ncs and m.allow_halt:
         if blocked is None:
-            print("[OK]    No thread is blocked when another stays in its non-critical section")
+            print("[OK]    A thread is never stuck just because another one stopped in its non-critical section")
             verdict["blocked"] = "none"
         else:
             st = g.states[blocked]
@@ -1141,7 +1146,7 @@ def report_protocol(prog, args):
             stopped = [m.p.threads[k]["name"] for k in range(nthreads) if st[1][k][2] == HALTED]
             print(f"[FAIL]  BLOCKED FOREVER: {', '.join(waiting)} can never enter because "
                   f"{', '.join(stopped)} stopped in its non-critical section")
-            print("        (fails 'success in the absence of contention')")
+            print("        (this breaks the rule that a thread must get in when nobody else wants to)")
             print_steps(g, m, g.path_to(blocked))
             verdict["blocked"] = "found"
 
@@ -1170,20 +1175,25 @@ def report_protocol(prog, args):
                     break
         for label, item, key in (("LIVELOCK", live, "livelock"), ("STARVATION", starve, "starvation")):
             if item is None:
-                print(f"[OK]    No {label.lower()} (under a fair scheduler)")
+                if key == "livelock":
+                    print("[OK]    No livelock: threads never keep running forever with nobody getting in")
+                else:
+                    print("[OK]    No starvation: every thread that keeps trying eventually gets in")
                 verdict[key] = "none"
                 continue
             comp, movers, trying = item
             entry = min(comp)
             victims = ", ".join(m.p.threads[k]["name"] for k in trying)
             if key == "livelock":
-                print(f"[FAIL]  LIVELOCK: threads keep running forever but nobody enters the critical section"
+                print(f"[FAIL]  LIVELOCK: the threads can keep running forever, but nobody ever gets in"
                       f" ({victims} keep trying)")
             else:
-                print(f"[FAIL]  STARVATION: {victims} can be overtaken forever while others keep entering")
-            print("        Reach the loop with:")
+                print(f"[FAIL]  STARVATION: {victims} can keep trying forever and never get in,"
+                      f" while others get in again and again")
+            print("        (assuming a fair scheduler: every ready thread gets a turn eventually)")
+            print("        These steps lead into the loop:")
             no = print_steps(g, m, g.path_to(entry))
-            print("        ...then repeat forever:")
+            print("        ...then these steps can repeat forever:")
             eok = (lambda info: not info["cs"]) if key == "livelock" else None
             print_steps(g, m, cycle_in(g, comp, entry, sorted(movers), eok), no)
             verdict[key] = "found"
@@ -1200,22 +1210,22 @@ def report_outputs(prog, args):
             finals.setdefault(st[2], sid)
     stuck = [sid for sid, st in enumerate(g.states)
              if not g.sched[sid] and any(t[2] == RUN for t in st[1])]
-    print(f"{prog.filename}: explored {len(g.states)} states")
+    print(f"{prog.filename}: checked every possible order of steps ({len(g.states)} different situations)")
     if not g.complete:
-        print("  WARNING: state limit reached; the list may be incomplete")
+        print("  WARNING: too many situations; the list may be incomplete (--max-states)")
     if m.truncated_outputs:
-        print(f"  NOTE: runs printing more than {args.max_output} items were cut off (--max-output)")
+        print(f"  NOTE: runs that print more than {args.max_output} items were not followed further (--max-output)")
     if args.why is not None:
         want = tuple(args.why.split())
         sid = finals.get(want)
         if sid is None:
-            print(f"\nOutput '{args.why}' with every thread finishing is IMPOSSIBLE.")
+            print(f"\nOutput '{args.why}' (with every thread finishing) is IMPOSSIBLE: no order of steps produces it.")
             close = [o for o in finals if o[:len(want)] == want or want[:len(o)] == o]
             if close:
                 print("  Possible outputs that start the same way: " +
                       "; ".join(" ".join(o) or "(nothing)" for o in sorted(close)[:8]))
         else:
-            print(f"\nOutput '{args.why}' IS possible. One schedule:")
+            print(f"\nOutput '{args.why}' IS possible. One order of steps that produces it:")
             print_steps(g, m, g.path_to(sid))
         return
     print(f"\nPossible outputs when every thread finishes ({len(finals)}):")
@@ -1235,14 +1245,14 @@ def report_outputs(prog, args):
     g2 = Graph(m2, args.max_states)
     loops = list(fair_cycles(g2, m2))
     if loops:
-        print("\nThe program can also run FOREVER (fair schedules). Example loops:")
+        print("\nThe program can also run FOREVER (with a fair scheduler). For example it can print:")
         shown = 0
         for comp, movers, _, internal in loops:
             entry = min(comp)
             cyc = cycle_in(g2, comp, entry, sorted(movers))
             pre = [i["print"] for (_, i, _) in g2.path_to(entry) if i["print"]]
             rep = [i["print"] for (_, i, _) in cyc if i["print"]]
-            print(f"    {' '.join(pre)} ( {' '.join(rep) or 'no output'} ) repeated forever")
+            print(f"    {' '.join(pre)} then ( {' '.join(rep) or 'nothing'} ) again and again forever")
             shown += 1
             if shown >= 5:
                 break
@@ -1309,12 +1319,12 @@ def report_infinite(prog, args):
         if not any(info["print"] for _, _, info in internal):
             continue
         entry = min(comp)
-        print(f"Infinite output ({' '.join(pat)}) repeated forever IS possible (fair schedule):")
+        print(f"The program CAN print {' '.join(pat)} {' '.join(pat)} ... forever (with a fair scheduler). Steps:")
         no = print_steps(pg, m, pg.path_to(entry))
-        print("  ...then repeat forever:")
+        print("  ...then these steps can repeat forever:")
         print_steps(pg, m, cycle_in(pg, comp, entry, sorted(movers)), no)
         return
-    print(f"Infinite output ({' '.join(pat)}) repeated forever is IMPOSSIBLE under a fair scheduler.")
+    print(f"The program can NOT print {' '.join(pat)} {' '.join(pat)} ... forever (with a fair scheduler).")
 
 
 def interactive(prog, args):

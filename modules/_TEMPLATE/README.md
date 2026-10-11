@@ -9,6 +9,10 @@
 
 One or two sentences: what you can do by the end.
 
+> Writing rule: a first-year student must understand every sentence. Define
+> each new term on first use (and link it to GLOSSARY.md), give an example
+> before the rule, and avoid unexplained jargon. See CONTRIBUTING.md.
+
 ---
 
 ## 1. The problem (why)

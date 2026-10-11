@@ -1,21 +1,21 @@
 /*
- * atomics.h — make real C behave like the lecture model.
+ * atomics.h - make shared variables in C behave the way the lectures assume.
  *
  * The lock algorithms in the lectures (Peterson, Filter, Bakery, ...) assume
- * that every read and write of a shared variable is atomic and that all
- * threads see those reads and writes in one single order ("sequential
- * consistency").
+ * two things:
+ *   - every read or write of a shared variable happens in one go, and
+ *   - all threads see those reads and writes in the order the code says.
  *
- * Plain C variables do NOT give you that:
+ * Ordinary C variables do NOT guarantee this:
  *   1. The compiler may keep a variable in a register, so a loop like
- *      `while (flag[j]) {}` can spin forever on a stale copy.
- *   2. The CPU may reorder a store with a later load (x86 does exactly this
- *      through its store buffer), which breaks Peterson's lock.
+ *      `while (flag[j]) {}` may never read the real variable again.
+ *   2. The CPU may make a write visible to other cores a little later,
+ *      after it has already done a later read. This breaks Peterson's lock.
  *
- * Wrapping shared variables in C11 atomics with the default (seq_cst)
- * ordering restores the lecture model. Use these helpers in the lock
- * exercises so you can concentrate on the algorithm.
- * See modules/05-mutual-exclusion/break_it/ for what goes wrong without them.
+ * C11 "atomic" variables fix both problems. The helpers below wrap them, so
+ * in the lock exercises you can write LOAD(x) and STORE(x, v) and think only
+ * about the algorithm.
+ * See modules/05-mutual-exclusion/break_it/ to watch what goes wrong without them.
  */
 #ifndef ATOMICS_H
 #define ATOMICS_H
@@ -28,7 +28,7 @@ typedef atomic_int shared_int;
 typedef atomic_bool shared_bool;
 typedef atomic_long shared_long;
 
-/* Atomic read and write (sequentially consistent). */
+/* Read / write a shared variable, in program order as seen by all threads. */
 #define LOAD(var) atomic_load(&(var))
 #define STORE(var, value) atomic_store(&(var), (value))
 

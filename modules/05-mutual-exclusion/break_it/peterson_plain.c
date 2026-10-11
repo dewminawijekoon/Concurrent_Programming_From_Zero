@@ -23,9 +23,10 @@ static void lock(int i) {
     int j = 1 - i;
     flag[i] = 1;
     victim = i;
-    // The CPU may let the load of flag[j] below overtake the stores above:
-    // the stores are still sitting in this core's store buffer.
-    if (use_fence) atomic_thread_fence(memory_order_seq_cst);   // drain it
+    // The CPU may do the READ of flag[j] below before the WRITES above are
+    // visible to the other core (the writes wait in a small queue first).
+    // A fence says: "make my earlier writes visible before any later read".
+    if (use_fence) atomic_thread_fence(memory_order_seq_cst);
     while (flag[j] && victim == i) {
     }
 }
@@ -54,14 +55,14 @@ int main(int argc, char **argv) {
     printf("%s: counter = %ld, expected %ld, lost %ld increments\n",
            use_fence ? "with fence" : "plain volatile", counter, expected, expected - counter);
     if (counter != expected)
-        printf("=> mutual exclusion was violated %ld times (at least).\n"
-               "   Each core buffers its own stores, so thread i can read flag[j]\n"
-               "   BEFORE its own flag[i] = 1 is visible to thread j. Both see the\n"
-               "   other's flag as 0 and both walk in. Try: ARGS=fence\n",
+        printf("=> both threads were in the critical section together at least %ld times.\n"
+               "   Why: a core's write to flag[i] reaches the other core a little late,\n"
+               "   but the core already goes on and reads flag[j]. So each thread can see\n"
+               "   the other's flag as 0, and both walk in. Try: ARGS=fence\n",
                expected - counter);
     else
         printf("=> no violation this run.%s\n",
-               use_fence ? " The fence forces the stores out before the load." :
+               use_fence ? " The fence makes each write visible before the next read." :
                            " Run again; it depends on timing and CPU.");
     return 0;
 }

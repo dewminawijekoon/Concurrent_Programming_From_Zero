@@ -23,11 +23,13 @@ These answers are about the length a marker expects for the marks shown.
    thread gets in. Starvation-freedom says *every* trying thread gets in.
    Peterson happens to have both (slides 25–26), but a deadlock-free lock
    can still starve a thread (e.g. a test-and-set spin lock, module 06).
-7. **False.** x86 lets a load overtake an earlier store to a *different*
-   location (store buffering), so both threads can read the other's flag
-   as 0. `volatile` stops the compiler caching, but not the CPU reordering.
-   It needs a fence or seq_cst atomics (`break_it/peterson_plain.c` shows
-   the failure).
+7. **False.** A CPU core does not make its writes visible to other cores
+   straight away. It may already *read* another variable while its own
+   write is still waiting. So each thread can write its own flag, then read
+   the other's flag as still false, and both go in. `volatile` only stops
+   the *compiler* from caching the variable; it does not stop the *CPU*
+   from doing this. You need a memory fence, or atomic variables.
+   `break_it/peterson_plain.c` shows the failure on a real machine.
 
 ## B. Short answer
 
@@ -43,8 +45,10 @@ These answers are about the length a marker expects for the marks shown.
     *Difference:* in a deadlock no thread can take a step. In a livelock
     threads keep taking steps (changing state) but never make progress, and
     a slightly different schedule *would* succeed.
-11. Assume both are in their CS. WLOG P1 entered at t1 < t2, when P2 entered,
-    and P1 stayed inside during [t1, t2]. At t1 P1 saw `c2 == 1`, so P2 had
+11. Assume, to get a contradiction, that both are in their CS. Call the
+    thread that entered first P1 (the other case is the same with names
+    swapped): P1 entered at time t1, P2 entered later at t2, and P1 was
+    still inside the whole time between t1 and t2. At t1 P1 saw `c2 == 1`, so P2 had
     not yet executed `c2 = 0`; P2 executes it after t1 and before t2. At t2
     P2 saw `c1 == 1`. But P1 set `c1 = 0` before t1 and only resets it in
     its post-protocol, which it has not reached. So `c1 == 0` at t2.
@@ -92,8 +96,9 @@ These answers are about the length a marker expects for the marks shown.
 17. (1) They show what mutual exclusion *needs*, so you can reason about any
     synchronization code, including your own (exam and interview staple).
     (2) Real locks are built on the same ideas, plus hardware atomics: flags
-    to announce, tie-breaking for fairness, spinning vs blocking. (3) They
-    expose the memory-model issue, which matters for any lock-free code.
+    to announce, tie-breaking for fairness, spinning vs blocking. (3) They show
+    that real CPUs can reorder memory operations, which matters whenever
+    you write code that shares variables without a lock.
 
 ## D. Code
 
