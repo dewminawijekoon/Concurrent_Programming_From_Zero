@@ -217,8 +217,8 @@ A state is **safe** if there is **some order** in which every process can
 get its full maximum and finish, even if all of them ask for their maximum
 right now. Otherwise it is **unsafe**.
 
-- Safe ⇒ the system can always avoid deadlock (by granting in that order).
-- Unsafe ⇒ deadlock is **possible**, not certain. A process might ask for
+- Safe means the system can always avoid deadlock (by granting in that order).
+- Unsafe means deadlock is **possible**, not certain. A process might ask for
   less than its maximum, or release something early. But the system can no
   longer guarantee that everyone finishes.
 

@@ -50,8 +50,8 @@ test-all:
 progress:
 	@rm -f .progress.tmp
 	@bash tools/runtests.sh --quiet --summary .progress.tmp $(MODULES) > /dev/null || true
-	@printf "\n%-34s %8s %8s\n" "module" "passed" "skipped"; \
-	 while read -r m p t s; do printf "%-34s %4s/%-3s %8s\n" "$$m" "$$p" "$$t" "$$s"; done < .progress.tmp; \
+	@printf "\n%-38s %8s %8s\n" "module" "passed" "skipped"; \
+	 while read -r m p t s; do printf "%-38s %4s/%-3s %8s\n" "$$m" "$$p" "$$t" "$$s"; done < .progress.tmp; \
 	 rm -f .progress.tmp
 
 verify-answers:
