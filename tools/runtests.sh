@@ -57,9 +57,11 @@ TSAN_RUN=""
 have_tsan()   {
     local p=/tmp/.tsan_probe.$$
     echo 'int main(void){return 0;}' | $CC -fsanitize=thread -x c - -o $p 2>/dev/null || return 1
-    if $p >/dev/null 2>&1; then rm -f $p; return 0; fi
+    # Prefer setarch whenever it works: whether TSan crashes without it depends on
+    # the random memory layout, so a single plain probe can pass by luck.
     if command -v setarch >/dev/null && setarch "$(uname -m)" -R $p >/dev/null 2>&1; then
         TSAN_RUN="setarch $(uname -m) -R"; rm -f $p; return 0; fi
+    if $p >/dev/null 2>&1; then rm -f $p; return 0; fi
     rm -f $p; return 1
 }
 
